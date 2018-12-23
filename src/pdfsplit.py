@@ -1,3 +1,5 @@
+import argparse
+import os
 import PyPDF2
 
 
@@ -9,7 +11,8 @@ def get_page(page, writer, upper_left, lower_right, index):
     new_page.cropBox.lowerRight = lower_right[0] * dim_x, lower_right[1] * dim_y
 
 
-def main(input_path, output_path, crops):
+def process_file(input_path, output_path, crops):
+    print("Processing {} -> {}".format(input_path, output_path))
     reader = PyPDF2.PdfFileReader(input_path)
     writer = PyPDF2.PdfFileWriter()
 
@@ -25,6 +28,26 @@ def main(input_path, output_path, crops):
         writer.write(fp)
 
 
+def main(input_path, output_path, crops):
+    if input_path == output_path:
+        print("Input and output path can not be identical.")
+        exit(-1)
+    if os.path.isfile(input_path):
+        process_file(input_path, output_path, crops)
+    elif os.path.isdir(input_path) and os.path.isdir(output_path):
+        for file_name in os.listdir(input_path):
+            file_path = os.path.join(input_path, file_name)
+            if os.path.isfile(file_path):
+                process_file(file_path, os.path.join(output_path, file_name), crops)
+    else:
+        print('Invalid choice of input/output path.')
+
+
 if __name__ == '__main__':
-    main("../TNN_WS18_01_Intro_slides.pdf", 'results.pdf',
+    parser = argparse.ArgumentParser(description="Split PDF handout slides.")
+    parser.add_argument('input', type=str, help="The path of the input file/directory to process")
+    parser.add_argument('output', type=str, help="The path to store the resulting PDF(s)")
+    args = parser.parse_args()
+
+    main(args.input, args.output,
          [((0, 1), (0.5, 0.5)), ((0, 0.5), (0.5, 0)), ((0.5, 1), (1, 0.5)), ((0.5, 0.5), (1, 0))])
